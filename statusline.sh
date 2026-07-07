@@ -1,10 +1,6 @@
 #!/bin/bash
 # ── Claude Code Status Line Hook ──
-# 显示项目目录、模型、上下文用量、费用、会话时长、代码变更、Git 分支、Sub-agent
-#
-# 安装：在 Claude Code settings.json 中设置：
-#   "statusLine.type": "command",
-#   "statusLine.command": "bash /path/to/statusline.sh"
+# 项目地址、模型、上下文、费用、时长、代码变更、Git 分支
 
 input=$(cat)
 
@@ -20,10 +16,10 @@ ot=$(echo "$cu" | jq -r '.output_tokens // 0')
 cr=$(echo "$cu" | jq -r '.cache_read_input_tokens // 0')
 cw=$(echo "$cu" | jq -r '.cache_creation_input_tokens // 0')
 
-# ── 高峰时段检测（北京时间 8:00-22:00 翻倍）──
+# ── 高峰时段检测（北京时间 9:00-12:00 和 14:00-18:00 翻倍）──
 hour_bj=$(TZ='Asia/Shanghai' date +%H)
 hour_bj=$((10#$hour_bj))  # 去掉前导零，避免被当作八进制
-if [ "$hour_bj" -ge 8 ] && [ "$hour_bj" -lt 22 ]; then
+if { [ "$hour_bj" -ge 9 ] && [ "$hour_bj" -lt 12 ]; } || { [ "$hour_bj" -ge 14 ] && [ "$hour_bj" -lt 18 ]; }; then
     is_peak=1
     multiplier=2
 else
@@ -31,7 +27,7 @@ else
     multiplier=1
 fi
 
-# ── 定价匹配（元/1M tokens 平时价格）──
+# ── 定价匹配（DeepSeek 为 元/1M tokens 平时价格）──
 # PI=输入 PO=输出 PCR=缓存读 PCW=缓存写
 case "$model_id" in
     *deepseek*flash*)  PI=1;   PO=2;   PCR="0.02";  PCW=1   ;;  # V4-Flash
